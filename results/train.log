@@ -1,0 +1,113 @@
+device: cpu
+train cities (14): ['aguasclaras', 'bercy', 'bordeaux', 'nantes', 'paris', 'rennes', 'saclay_e', 'abudhabi', 'cupertino', 'pisa', 'beihai', 'hongkong', 'beirut', 'mumbai']
+test cities  (10): ['brasilia', 'montpellier', 'norcia', 'rio', 'saclay_w', 'valencia', 'dubai', 'lasvegas', 'milano', 'chongqing']
+loading cities (12 GeoTIFF bands + mask per city, two dates):
+  loaded aguasclaras (1/14) in 1s
+  loaded bercy (2/14) in 0s
+  loaded bordeaux (3/14) in 0s
+  loaded nantes (4/14) in 0s
+  loaded paris (5/14) in 0s
+  loaded rennes (6/14) in 0s
+  loaded saclay_e (7/14) in 1s
+  loaded abudhabi (8/14) in 2s
+  loaded cupertino (9/14) in 4s
+  loaded pisa (10/14) in 1s
+  loaded beihai (11/14) in 3s
+  loaded hongkong (12/14) in 2s
+  loaded beirut (13/14) in 4s
+  loaded mumbai (14/14) in 1s
+tiles: train=856 val=359
+epoch 01 loss 0.5798 val IoU(change) 0.0000 F1 0.0000
+epoch 02 loss 0.5120 val IoU(change) 0.1159 F1 0.2077
+epoch 03 loss 0.4531 val IoU(change) 0.2258 F1 0.3684
+epoch 04 loss 0.4324 val IoU(change) 0.2771 F1 0.4339
+epoch 05 loss 0.4289 val IoU(change) 0.3187 F1 0.4834
+epoch 06 loss 0.4197 val IoU(change) 0.2827 F1 0.4408
+epoch 07 loss 0.4118 val IoU(change) 0.1701 F1 0.2907
+epoch 08 loss 0.4081 val IoU(change) 0.2857 F1 0.4445
+  brasilia: IoU(change) 0.2028 F1 0.3372 pred 155 ha / true 52 ha
+  montpellier: IoU(change) 0.5114 F1 0.6767 pred 153 ha / true 131 ha
+  norcia: IoU(change) 0.0998 F1 0.1814 pred 24 ha / true 12 ha
+  rio: IoU(change) 0.2806 F1 0.4383 pred 66 ha / true 86 ha
+  saclay_w: IoU(change) 0.0873 F1 0.1605 pred 211 ha / true 50 ha
+  valencia: IoU(change) 0.0200 F1 0.0392 pred 114 ha / true 10 ha
+  dubai: IoU(change) 0.2959 F1 0.4566 pred 363 ha / true 487 ha
+  lasvegas: IoU(change) 0.5057 F1 0.6717 pred 621 ha / true 453 ha
+  milano: IoU(change) 0.2585 F1 0.4107 pred 16 ha / true 24 ha
+  chongqing: IoU(change) 0.3240 F1 0.4895 pred 163 ha / true 286 ha
+{
+  "test": {
+    "per_city": {
+      "brasilia": {
+        "iou_change": 0.2028,
+        "iou_no_change": 0.9312,
+        "mean_iou": 0.567,
+        "f1_change": 0.3372,
+        "precision_change": 0.2257,
+        "recall_change": 0.6658,
+        "true_ha": 52.42,
+        "pred_ha": 154.6,
+        "abs_ha_error": 102.18
+      },
+      "montpellier": {
+        "iou_change": 0.5114,
+        "iou_no_change": 0.9498,
+        "mean_iou": 0.7306,
+        "f1_change": 0.6767,
+        "precision_change": 0.6268,
+        "recall_change": 0.7354,
+        "true_ha": 130.54,
+        "pred_ha": 153.17,
+        "abs_ha_error": 22.63
+      },
+      "norcia": {
+        "iou_change": 0.0998,
+        "iou_no_change": 0.968,
+        "mean_iou": 0.5339,
+        "f1_change": 0.1814,
+        "precision_change": 0.1373,
+        "recall_change": 0.2673,
+        "true_ha": 12.27,
+        "pred_ha": 23.89,
+        "abs_ha_error": 11.62
+      },
+      "rio": {
+        "iou_change": 0.2806,
+        "iou_no_change": 0.9423,
+        "mean_iou": 0.6115,
+        "f1_change": 0.4383,
+        "precision_change": 0.505,
+        "recall_change": 0.3872,
+        "true_ha": 85.52,
+        "pred_ha": 65.57,
+        "abs_ha_error": 19.95
+      },
+      "saclay_w": {
+        "iou_change": 0.0873,
+        "iou_no_change": 0.9498,
+        "mean_iou": 0.5185,
+        "f1_change": 0.1605,
+        "precision_change": 0.0993,
+        "recall_change": 0.4183,
+        "true_ha": 50.18,
+        "pred_ha": 211.36,
+        "abs_ha_error": 161.18
+      },
+      "valencia": {
+        "iou_change": 0.02,
+        "iou_no_change": 0.9453,
+        "mean_iou": 0.4827,
+        "f1_change": 0.0392,
+        "precision_change": 0.0213,
+        "recall_change": 0.2508,
+        "true_ha": 9.69,
+        "pred_ha": 114.19,
+        "abs_ha_error": 104.5
+      },
+      "dubai": {
+        "iou_change": 0.2959,
+        "iou_no_change": 0.9021,
+        "mean_iou": 0.599,
+        "f1_change": 0.4566,
+        "precision_change": 0.5348,
+

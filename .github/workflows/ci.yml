@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: "Install (no torch: unit tests are pure numpy/scipy/rasterio-light)"
+        run: |
+          python -m pip install -U pip
+          pip install numpy scipy scikit-learn matplotlib pytest
+          pip install -e . --no-deps
+      - name: Run tests
+        run: pytest -q
+      - name: Lint
+        run: |
+          pip install ruff
+          ruff check src tests
+
+  smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install with torch (CPU) + rasterio
+        run: |
+          python -m pip install -U pip
+          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          pip install numpy scipy scikit-learn matplotlib rasterio segmentation-models-pytorch
+          pip install -e . --no-deps
+      - name: "Import every module (catches API drift)"
+        run: |
+          python -c '
+          import importlib
+          mods = ["config","data","dataset","preprocess","models","train","evaluate","change","visualize","baseline","results_table","figures"]
+          for m in mods:
+              importlib.import_module("forest_change." + m)
+          print("all modules import cleanly")
+          '

@@ -1,0 +1,15 @@
+D:\Downloads\Personal Agentic Work\ml-projects\deforestation-detection\.venv\Lib\site-packages\rasterio\__init__.py:379: NotGeoreferencedWarning: Dataset has no geotransform, gcps, or rpcs. The identity matrix will be returned.
+  dataset = DatasetReader(path, driver=driver, sharing=sharing, thread_safe=thread_safe, **kwargs)
+baseline: NDVI forest threshold tuned on train -> 0.1
+  brasilia: IoU(change) 0.2986 F1 0.4598 pred 32 ha / true 52 ha
+  montpellier: IoU(change) 0.0519 F1 0.0986 pred 14 ha / true 131 ha
+  norcia: IoU(change) 0.0935 F1 0.1710 pred 2 ha / true 12 ha
+  rio: IoU(change) 0.0205 F1 0.0402 pred 9 ha / true 86 ha
+  saclay_w: IoU(change) 0.0206 F1 0.0403 pred 2 ha / true 50 ha
+  valencia: IoU(change) 0.0000 F1 0.0000 pred 0 ha / true 10 ha
+  dubai: IoU(change) 0.0043 F1 0.0086 pred 16 ha / true 487 ha
+  lasvegas: IoU(change) 0.0000 F1 0.0000 pred 0 ha / true 453 ha
+  milano: IoU(change) 0.1310 F1 0.2316 pred 7 ha / true 24 ha
+  chongqing: IoU(change) 0.1728 F1 0.2947 pred 63 ha / true 286 ha
+  mean: IoU 0.0793 F1 0.1345
+EXIT=0

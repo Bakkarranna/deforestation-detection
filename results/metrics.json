@@ -1,0 +1,240 @@
+{
+  "run": {
+    "history": [
+      {
+        "epoch": 1,
+        "loss": 0.5798,
+        "iou_change": 0.0,
+        "iou_no_change": 0.9769,
+        "mean_iou": 0.4885,
+        "f1_change": 0.0,
+        "precision_change": 0.0,
+        "recall_change": 0.0
+      },
+      {
+        "epoch": 2,
+        "loss": 0.512,
+        "iou_change": 0.1159,
+        "iou_no_change": 0.8652,
+        "mean_iou": 0.4906,
+        "f1_change": 0.2077,
+        "precision_change": 0.1205,
+        "recall_change": 0.7522
+      },
+      {
+        "epoch": 3,
+        "loss": 0.4531,
+        "iou_change": 0.2258,
+        "iou_no_change": 0.9741,
+        "mean_iou": 0.5999,
+        "f1_change": 0.3684,
+        "precision_change": 0.4247,
+        "recall_change": 0.3252
+      },
+      {
+        "epoch": 4,
+        "loss": 0.4324,
+        "iou_change": 0.2771,
+        "iou_no_change": 0.9749,
+        "mean_iou": 0.626,
+        "f1_change": 0.4339,
+        "precision_change": 0.4565,
+        "recall_change": 0.4134
+      },
+      {
+        "epoch": 5,
+        "loss": 0.4289,
+        "iou_change": 0.3187,
+        "iou_no_change": 0.9705,
+        "mean_iou": 0.6446,
+        "f1_change": 0.4834,
+        "precision_change": 0.4095,
+        "recall_change": 0.5898
+      },
+      {
+        "epoch": 6,
+        "loss": 0.4197,
+        "iou_change": 0.2827,
+        "iou_no_change": 0.9694,
+        "mean_iou": 0.626,
+        "f1_change": 0.4408,
+        "precision_change": 0.3842,
+        "recall_change": 0.5169
+      },
+      {
+        "epoch": 7,
+        "loss": 0.4118,
+        "iou_change": 0.1701,
+        "iou_no_change": 0.9738,
+        "mean_iou": 0.5719,
+        "f1_change": 0.2907,
+        "precision_change": 0.3898,
+        "recall_change": 0.2318
+      },
+      {
+        "epoch": 8,
+        "loss": 0.4081,
+        "iou_change": 0.2857,
+        "iou_no_change": 0.9689,
+        "mean_iou": 0.6273,
+        "f1_change": 0.4445,
+        "precision_change": 0.3813,
+        "recall_change": 0.5327
+      }
+    ],
+    "best_val_iou_change": 0.3187,
+    "train_cities": [
+      "aguasclaras",
+      "bercy",
+      "bordeaux",
+      "nantes",
+      "paris",
+      "rennes",
+      "saclay_e",
+      "abudhabi",
+      "cupertino",
+      "pisa",
+      "beihai",
+      "hongkong",
+      "beirut",
+      "mumbai"
+    ],
+    "test_cities": [
+      "brasilia",
+      "montpellier",
+      "norcia",
+      "rio",
+      "saclay_w",
+      "valencia",
+      "dubai",
+      "lasvegas",
+      "milano",
+      "chongqing"
+    ],
+    "val_cities": [
+      "bercy",
+      "nantes",
+      "rennes",
+      "beirut"
+    ],
+    "n_train_tiles": 856,
+    "n_val_tiles": 359,
+    "device": "cpu",
+    "epochs": 8
+  },
+  "test": {
+    "per_city": {
+      "brasilia": {
+        "iou_change": 0.2028,
+        "iou_no_change": 0.9312,
+        "mean_iou": 0.567,
+        "f1_change": 0.3372,
+        "precision_change": 0.2257,
+        "recall_change": 0.6658,
+        "true_ha": 52.42,
+        "pred_ha": 154.6,
+        "abs_ha_error": 102.18
+      },
+      "montpellier": {
+        "iou_change": 0.5114,
+        "iou_no_change": 0.9498,
+        "mean_iou": 0.7306,
+        "f1_change": 0.6767,
+        "precision_change": 0.6268,
+        "recall_change": 0.7354,
+        "true_ha": 130.54,
+        "pred_ha": 153.17,
+        "abs_ha_error": 22.63
+      },
+      "norcia": {
+        "iou_change": 0.0998,
+        "iou_no_change": 0.968,
+        "mean_iou": 0.5339,
+        "f1_change": 0.1814,
+        "precision_change": 0.1373,
+        "recall_change": 0.2673,
+        "true_ha": 12.27,
+        "pred_ha": 23.89,
+        "abs_ha_error": 11.62
+      },
+      "rio": {
+        "iou_change": 0.2806,
+        "iou_no_change": 0.9423,
+        "mean_iou": 0.6115,
+        "f1_change": 0.4383,
+        "precision_change": 0.505,
+        "recall_change": 0.3872,
+        "true_ha": 85.52,
+        "pred_ha": 65.57,
+        "abs_ha_error": 19.95
+      },
+      "saclay_w": {
+        "iou_change": 0.0873,
+        "iou_no_change": 0.9498,
+        "mean_iou": 0.5185,
+        "f1_change": 0.1605,
+        "precision_change": 0.0993,
+        "recall_change": 0.4183,
+        "true_ha": 50.18,
+        "pred_ha": 211.36,
+        "abs_ha_error": 161.18
+      },
+      "valencia": {
+        "iou_change": 0.02,
+        "iou_no_change": 0.9453,
+        "mean_iou": 0.4827,
+        "f1_change": 0.0392,
+        "precision_change": 0.0213,
+        "recall_change": 0.2508,
+        "true_ha": 9.69,
+        "pred_ha": 114.19,
+        "abs_ha_error": 104.5
+      },
+      "dubai": {
+        "iou_change": 0.2959,
+        "iou_no_change": 0.9021,
+        "mean_iou": 0.599,
+        "f1_change": 0.4566,
+        "precision_change": 0.5348,
+        "recall_change": 0.3984,
+        "true_ha": 486.89,
+        "pred_ha": 362.69,
+        "abs_ha_error": 124.2
+      },
+      "lasvegas": {
+        "iou_change": 0.5057,
+        "iou_no_change": 0.9364,
+        "mean_iou": 0.7211,
+        "f1_change": 0.6717,
+        "precision_change": 0.5808,
+        "recall_change": 0.7964,
+        "true_ha": 452.7,
+        "pred_ha": 620.69,
+        "abs_ha_error": 167.99
+      },
+      "milano": {
+        "iou_change": 0.2585,
+        "iou_no_change": 0.9923,
+        "mean_iou": 0.6254,
+        "f1_change": 0.4107,
+        "precision_change": 0.523,
+        "recall_change": 0.3382,
+        "true_ha": 24.19,
+        "pred_ha": 15.64,
+        "abs_ha_error": 8.55
+      },
+      "chongqing": {
+        "iou_change": 0.324,
+        "iou_no_change": 0.9406,
+        "mean_iou": 0.6323,
+        "f1_change": 0.4895,
+        "precision_change": 0.6742,
+        "recall_change": 0.3842,
+        "true_ha": 286.37,
+        "pred_ha": 163.21,
+        "abs_ha_error": 123.16
+      }
+    }
+  },
+  "minutes": 108.5
+}

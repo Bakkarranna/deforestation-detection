@@ -10,6 +10,50 @@ hectare-scale area accounting.
 
 ![Per-city IoU and F1, U-Net vs NDVI baseline](results/figures/per_city_metrics.png)
 
+## About
+
+**The problem.** Forest loss is reported as annual national totals, but the
+decisions that cause and prevent it happen at the scale of individual patches:
+a clearing, a licensed plantation, a fire scar. Reading that from satellite
+imagery is easy to demo and hard to do honestly — changed pixels are 1-5% of a
+scene, and cloud, shadow and seasonal greenness all imitate deforestation.
+
+**The data.** [OSCD (Onera Satellite Change
+Detection)](https://rcapek.github.io/oscd-dataset/) — 24 cities, each with a
+pair of co-registered Sentinel-2 L2A images from different years, 12 usable
+bands per date, plus hand-drawn binary deforestation masks. The official split
+is 14 train cities / 10 test **cities**, not tiles. The ~38 GB archive is
+fetched from Hugging Face at runtime; nothing binary is bundled here.
+
+**Two models on identical input:**
+
+- a **U-Net** (MobileNetV2 encoder via `segmentation-models-pytorch`) over
+  128×128 tiles of 24 channels (12 bands × 2 dates), with an NDVI layer,
+  cloud/shadow masking, per-band normalisation and a Dice+BCE loss, because
+  plain BCE collapses to "no change everywhere" when change is 1-5% of a tile;
+- an **NDVI-loss baseline** — a per-pixel greenness-loss threshold — as the
+  reference a domain expert would build by hand, so the learned model has to
+  beat something other than itself.
+
+**Why the numbers here can be trusted:**
+
+- **City-level split.** Tiles never cross a city boundary, and no tile of a
+  held-out city is ever seen in training. Tiling first and splitting tiles at
+  random leaks adjacent-tile structure and inflates every score.
+- **The baseline's threshold is tuned on the 14 train cities only**, then
+  frozen before the test evaluation, so the comparison is uncontaminated.
+- **Checkpoint selection on validation IoU, never on test score.**
+- **Area accounting beside the pixel metrics.** IoU says how well the *shape*
+  matches; hectares say whether the *amount* of cleared land is right. On
+  `valencia` the model scores 0.23 IoU yet predicts 114 ha against 9.7 ha true
+  — the two views disagree, and both are reported.
+- **Full-city inference for evaluation**, not the 128×128 tiles the model
+  trained on, so tile-border artefacts do not leak into the metrics.
+
+**What it is not:** not a production monitoring system. There is no temporal
+series, no seasonal modelling and no SCL/QA60 cloud-mask layer (OSCD does not
+ship one), and a full 8-epoch run is ~108 min on a 4-thread CPU.
+
 ## Results
 
 Mean over the 10 held-out test cities (full-city inference, best checkpoint by

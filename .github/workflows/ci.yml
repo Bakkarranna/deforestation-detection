@@ -16,7 +16,7 @@ jobs:
       - name: "Install (no torch: unit tests are pure numpy/scipy/rasterio-light)"
         run: |
           python -m pip install -U pip
-          pip install numpy scipy scikit-learn matplotlib pytest
+          pip install numpy scipy scikit-learn matplotlib rasterio pytest
           pip install -e . --no-deps
       - name: Run tests
         run: pytest -q
@@ -35,7 +35,9 @@ jobs:
       - name: Install with torch (CPU) + rasterio
         run: |
           python -m pip install -U pip
-          pip install torch --index-url https://download.pytorch.org/whl/cpu
+          # torch and torchvision must come from the same index or their ABI versions
+          # disagree (RuntimeError: operator torchvision::nms does not exist).
+          pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
           pip install numpy scipy scikit-learn matplotlib rasterio segmentation-models-pytorch
           pip install -e . --no-deps
       - name: "Import every module (catches API drift)"

@@ -80,6 +80,24 @@ The full table with per-city breakdown and area accounting lives in
 
 ![Predicted change map, montpellier](results/figures/change_map_montpellier.png)
 
+### Live results console
+
+The same numbers, plus the per-city area accounting, the per-epoch validation
+history and the raw JSON artefacts, are published as a static site — open it in
+a browser with nothing installed:
+
+**https://bakkarranna.github.io/deforestation-detection/**
+
+It is generated from the committed JSON artefacts, not retrained, so the page
+can never disagree with the tables above:
+
+```bash
+python -m forest_change.dashboard --strict    # writes docs/index.html
+```
+
+`docs/index.html` is committed and served by
+[.github/workflows/pages.yml](.github/workflows/pages.yml).
+
 ![Qualitative prediction montpellier — green hit / red false alarm / blue miss](results/figures/qual_montpellier.png)
 
 - Pixel scores and hectare accounting disagree honestly. The model
@@ -132,11 +150,12 @@ Two decisions drive the result:
 ## Repository layout
 
 ```
-src/forest_change/   pipeline source
+src/forest_change/   pipeline source and the console renderer
 tests/               pure numpy/scipy unit tests (no torch, no data needed)
+docs/                the static results console published to GitHub Pages
 results/             metrics, tables, logs and the figures above
 data/                dataset, downloaded on demand (git-ignored)
-.github/workflows/   CI: install, ruff lint, pytest
+.github/workflows/   CI: install, ruff lint, pytest; Pages: publish docs/
 ```
 
 ## Getting started
@@ -201,12 +220,21 @@ the prediction the metrics were computed from.
 ## Tests
 
 ```bash
-pytest                # 9 unit tests, pure numpy/scipy
+pytest                # 21 unit tests, pure numpy/scipy
 ruff check src tests
 ```
 
-CI runs both on every push and pull request
-([.github/workflows/ci.yml](.github/workflows/ci.yml)).
+The 12 dashboard tests cover the renderers directly: the mean is an unweighted
+mean over cities, the no-change-only probe is derived rather than asserted, the
+per-city table sorts best-to-worst and carries the area accounting, every
+committed figure is copied beside the page with its caption, a re-run is
+idempotent, and the built document is one self-contained page with no remote
+assets and no dead in-page links.
+
+CI runs the tests, lint and both smoke jobs on every push and pull request
+([.github/workflows/ci.yml](.github/workflows/ci.yml)), and
+[.github/workflows/pages.yml](.github/workflows/pages.yml) publishes the console
+to GitHub Pages on `main`.
 
 ## Implementation notes
 

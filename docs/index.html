@@ -1,0 +1,678 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Forest-change detection - results console</title>
+<meta name="description" content="Change-class IoU, F1 and cleared-area accounting for a U-Net forest-change detector on the held-out OSCD test cities, with the failure modes that the averages hide.">
+<meta name="color-scheme" content="light dark">
+<style>
+/* kpi cards */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin:0 0 22px}
+.kpi{background:color-mix(in srgb,var(--teal) 7%,var(--card));border:1px solid var(--line);
+  border-radius:12px;padding:14px 16px}
+.kpi-plain{background:var(--card)}
+.kpi-label{margin:0;font-size:.75rem;font-weight:700;letter-spacing:.06em;
+  text-transform:uppercase;color:var(--muted)}
+.kpi-label .hint{display:block;margin-top:3px;font-weight:500;letter-spacing:0;
+  text-transform:none;font-size:.75rem;color:var(--muted)}
+.kpi-value{margin:6px 0 0;font-size:1.65rem;font-weight:750;font-variant-numeric:tabular-nums;
+  color:var(--teal)}
+
+/* tables */
+table{width:100%;border-collapse:collapse;font-size:.9375rem}
+caption{text-align:left;color:var(--muted);font-size:.8125rem;padding:0 0 10px}
+th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);vertical-align:middle}
+thead th{font-size:.6875rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--muted);border-bottom:2px solid var(--line)}
+tbody tr:last-child th,tbody tr:last-child td{border-bottom:0}
+tbody tr.best{background:color-mix(in srgb,var(--teal) 9%,transparent)}
+.grid{margin-bottom:22px}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.tag{font-size:.75rem;font-weight:600;padding:3px 8px;border-radius:6px;white-space:nowrap}
+.tag.ok{color:var(--green);background:color-mix(in srgb,var(--green) 14%,transparent)}
+.tag.meh{color:var(--amber);background:color-mix(in srgb,var(--amber) 14%,transparent)}
+.tag.bad{color:var(--rose);background:color-mix(in srgb,var(--rose) 14%,transparent)}
+.bar-cell{width:22%;min-width:110px}
+.bar{display:block;height:9px;border-radius:999px;background:var(--teal)}
+.bars .bar-cell{width:34%}
+
+:root{
+  --ink:#0f172a; --ink-2:#334155; --muted:#64748b; --line:#dbe3ec;
+  --bg:#f6f8fb; --card:#ffffff; --teal:#0f4c5c; --teal-2:#0f766e;
+  --amber:#b45309; --rose:#be1239; --green:#15803d;
+  --radius:14px; --shadow:0 1px 2px rgba(15,23,42,.06),0 8px 24px rgba(15,23,42,.06);
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --ink:#e8eef6; --ink-2:#c3cede; --muted:#93a2b6; --line:#26313f;
+    --bg:#0b1220; --card:#111a2b; --teal:#7fd4c1; --teal-2:#5eead4;
+    --amber:#fbbf24; --rose:#fb7185; --green:#4ade80;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
+  }
+}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+  font:16px/1.65 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  -webkit-font-smoothing:antialiased}
+.wrap{max-width:1080px;margin:0 auto;padding:32px 22px 72px}
+a{color:var(--teal-2);text-decoration-thickness:1px;text-underline-offset:3px}
+code{font:0.875em/1.4 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  background:color-mix(in srgb,var(--teal) 8%,transparent);
+  padding:.15em .4em;border-radius:6px;color:inherit}
+
+.mast{display:flex;gap:20px;align-items:flex-start;flex-wrap:wrap;
+  justify-content:space-between;padding-bottom:22px;border-bottom:1px solid var(--line)}
+.eyebrow{margin:0 0 6px;font-size:.75rem;font-weight:700;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--teal-2)}
+h1{margin:0;font-size:clamp(1.7rem,1.2rem + 2vw,2.5rem);line-height:1.15;
+  letter-spacing:-.02em;font-weight:750}
+.sub{margin:10px 0 0;color:var(--muted);max-width:62ch}
+.mast-links{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px}
+.mast-links a{font-size:.875rem;font-weight:600;padding:8px 14px;border-radius:999px;
+  border:1px solid var(--line);background:var(--card);color:var(--ink)}
+.mast-links a:hover{border-color:var(--teal-2)}
+
+nav.toc{position:sticky;top:0;z-index:5;background:color-mix(in srgb,var(--bg) 88%,transparent);
+  backdrop-filter:blur(8px);border-bottom:1px solid var(--line);margin:0 -22px 28px;
+  padding:10px 22px;display:flex;gap:6px;flex-wrap:wrap}
+nav.toc a{font-size:.8125rem;font-weight:600;color:var(--ink-2);padding:6px 10px;
+  border-radius:8px;text-decoration:none}
+nav.toc a:hover,nav.toc a:focus-visible{background:color-mix(in srgb,var(--teal) 10%,transparent);
+  color:var(--teal)}
+
+/* sections and prose */
+.section{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);padding:26px 28px;margin:0 0 22px}
+.section>h2{margin:0 0 4px;font-size:1.3rem;letter-spacing:-.01em}
+.section>h3{margin:0 0 6px;font-size:1rem}
+.prose{margin:0 0 16px;color:var(--ink-2);max-width:76ch}
+.cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:16px}
+.callout{border:1px solid var(--line);border-left:4px solid var(--teal-2);
+  border-radius:10px;padding:14px 16px;background:var(--card)}
+.callout p{margin:0;color:var(--ink-2);font-size:.9375rem}
+.callout.warn{border-left-color:var(--amber)}
+.callout.bad{border-left-color:var(--rose)}
+.callout.ok{border-left-color:var(--green)}
+/* figures */
+.figs{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:18px}
+.fig{margin:0}
+.fig img{width:100%;height:auto;border:1px solid var(--line);border-radius:10px;background:#fff}
+.fig figcaption{margin-top:8px;font-size:.8125rem;color:var(--muted)}
+
+/* raw artefacts */
+.raw{margin-top:22px;border:1px solid var(--line);border-radius:10px;padding:12px 14px;
+  background:var(--card)}
+.raw summary{cursor:pointer;font-size:.875rem;font-weight:600;color:var(--teal)}
+.raw pre{margin:12px 0 0;padding:12px;overflow:auto;max-height:420px;font-size:.8125rem;
+  background:color-mix(in srgb,var(--teal) 6%,transparent);border-radius:8px}
+
+footer{margin-top:34px;padding-top:18px;border-top:1px solid var(--line);
+  color:var(--muted);font-size:.8125rem;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+@media (max-width:640px){
+  .wrap{padding:20px 14px 48px} .section{padding:18px 16px}
+  th,td{padding:8px 8px} .bar-cell{display:none}
+}
+@media print{
+  nav.toc,.mast-links{display:none} body{background:#fff}
+  .section{box-shadow:none;break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="mast"><div><p class="eyebrow">Applied ML portfolio - results console</p><h1>Forest-change detection on the OSCD benchmark</h1><p class="sub">A lightweight U-Net on 12-band Sentinel-2 scene pairs, trained on 856 tiles from 14 labelled cities and reported once on the 10 held-out test cities. Changed pixels are 1-5% of a scene, so every headline here is a change-class score, never a mean over classes.</p><div class="mast-links"><a href="https://github.com/Bakkarranna/deforestation-detection">Repository</a><a href="https://github.com/Bakkarranna">Other projects</a><a href="#results">Skip to results</a></div></div></header><nav class="toc" aria-label="Sections"><a href="#results">Results</a><a href="#cities">Per city &amp; area</a><a href="#figures">Figures</a><a href="#honest">Limitations</a><a href="#artefacts">Artefacts</a></nav><section class="section" id="results"><h2>Results</h2><p class="prose">Two models, one test split, nothing tuned on it. The U-Net is trained only on the 14 labelled OSCD train cities, with 4 of them held back for early stopping; the 10 test cities are scored exactly once. The baseline is a hand-tuned NDVI rule, frozen on the train cities and evaluated here unchanged.</p><div class="kpis"><div class="kpi"><p class="kpi-label">U-Net IoU (change)<span class="hint">mean over the held-out cities</span></p><p class="kpi-value">0.2586</p></div><div class="kpi"><p class="kpi-label">U-Net F1 (change)<span class="hint">precision 0.3928, recall 0.4642</span></p><p class="kpi-value">0.3862</p></div><div class="kpi kpi-plain"><p class="kpi-label">U-Net mean IoU<span class="hint">both classes, change and no-change</span></p><p class="kpi-value">0.6022</p></div><div class="kpi"><p class="kpi-label">Margin over baseline<span class="hint">change-class F1: 0.1345 for the baseline</span></p><p class="kpi-value">+25.2 pts</p></div></div><table class="grid"><caption>Mean over the 10 held-out OSCD test cities, never tuned on them</caption><thead><tr><th scope="col">Metric</th><th scope="col">U-Net (mobilenet_v2, 24 ch, 8 epochs)</th><th scope="col">NDVI-loss baseline</th></tr></thead><tbody><tr><th scope="row">IoU (change class)</th><td class="num">0.2586</td><td class="num">0.0793</td></tr><tr class="best"><th scope="row">F1 (change class)</th><td class="num">0.3862</td><td class="num">0.1345</td></tr><tr><th scope="row">Precision (change class)</th><td class="num">0.3928</td><td class="num">0.3827</td></tr><tr><th scope="row">Recall (change class)</th><td class="num">0.4642</td><td class="num">0.0900</td></tr><tr><th scope="row">Mean IoU (both classes)</th><td class="num">0.6022</td><td class="num">0.5182</td></tr><tr><th scope="row">IoU (no-change class)</th><td class="num">0.9458</td><td class="num">0.9571</td></tr></tbody></table><table class="grid"><caption>Validation metrics per epoch on the 4 held-out train cities. The reported checkpoint is epoch 5, at 0.3187 change-class IoU; the last epoch is not selected.</caption><thead><tr><th scope="col">Epoch</th><th scope="col">Loss</th><th scope="col">IoU (change)</th><th scope="col">IoU (no-change)</th><th scope="col">Mean IoU</th><th scope="col">F1 (change)</th><th scope="col">Precision</th><th scope="col">Recall</th></tr></thead><tbody><tr><th scope="row">1</th><td class="num">0.5798</td><td class="num">0.0000</td><td class="num">0.9769</td><td class="num">0.4885</td><td class="num">0.0000</td><td class="num">0.0000</td><td class="num">0.0000</td></tr><tr><th scope="row">2</th><td class="num">0.5120</td><td class="num">0.1159</td><td class="num">0.8652</td><td class="num">0.4906</td><td class="num">0.2077</td><td class="num">0.1205</td><td class="num">0.7522</td></tr><tr><th scope="row">3</th><td class="num">0.4531</td><td class="num">0.2258</td><td class="num">0.9741</td><td class="num">0.5999</td><td class="num">0.3684</td><td class="num">0.4247</td><td class="num">0.3252</td></tr><tr><th scope="row">4</th><td class="num">0.4324</td><td class="num">0.2771</td><td class="num">0.9749</td><td class="num">0.6260</td><td class="num">0.4339</td><td class="num">0.4565</td><td class="num">0.4134</td></tr><tr class="best"><th scope="row">5</th><td class="num">0.4289</td><td class="num">0.3187</td><td class="num">0.9705</td><td class="num">0.6446</td><td class="num">0.4834</td><td class="num">0.4095</td><td class="num">0.5898</td></tr><tr><th scope="row">6</th><td class="num">0.4197</td><td class="num">0.2827</td><td class="num">0.9694</td><td class="num">0.6260</td><td class="num">0.4408</td><td class="num">0.3842</td><td class="num">0.5169</td></tr><tr><th scope="row">7</th><td class="num">0.4118</td><td class="num">0.1701</td><td class="num">0.9738</td><td class="num">0.5719</td><td class="num">0.2907</td><td class="num">0.3898</td><td class="num">0.2318</td></tr><tr><th scope="row">8</th><td class="num">0.4081</td><td class="num">0.2857</td><td class="num">0.9689</td><td class="num">0.6273</td><td class="num">0.4445</td><td class="num">0.3813</td><td class="num">0.5327</td></tr></tbody></table></section><section class="section" id="cities"><h2>Per city and area</h2><table class="grid bars"><caption>Sorted best-to-worst on change-class F1. Hectares are per-city totals over the 12-band scene pair, so a predicted-area error is an area decision, not a pixel one.</caption><thead><tr><th scope="col">City (held out)</th><th scope="col">U-Net F1</th><th scope="col" class="bar-cell">F1</th><th scope="col">Baseline IoU</th><th scope="col">Baseline F1</th><th scope="col">True cleared</th><th scope="col">U-Net cleared</th><th scope="col">Baseline cleared</th><th scope="col">U-Net area error</th></tr></thead><tbody><tr><th scope="row">montpellier</th><td class="num"><span class="tag ok">0.6767</span></td><td class="bar-cell"><span class="bar" style="width:67.7%"></span></td><td class="num">0.0519</td><td class="num">0.0986</td><td class="num">130.5 ha</td><td class="num">153.2 ha</td><td class="num">13.7 ha</td><td class="num">22.6 ha</td></tr><tr><th scope="row">lasvegas</th><td class="num"><span class="tag ok">0.6717</span></td><td class="bar-cell"><span class="bar" style="width:67.2%"></span></td><td class="num">0.0000</td><td class="num">0.0000</td><td class="num">452.7 ha</td><td class="num">620.7 ha</td><td class="num">0.0 ha</td><td class="num">168.0 ha</td></tr><tr><th scope="row">chongqing</th><td class="num"><span class="tag meh">0.4895</span></td><td class="bar-cell"><span class="bar" style="width:48.9%"></span></td><td class="num">0.1728</td><td class="num">0.2947</td><td class="num">286.4 ha</td><td class="num">163.2 ha</td><td class="num">63.3 ha</td><td class="num">123.2 ha</td></tr><tr><th scope="row">dubai</th><td class="num"><span class="tag meh">0.4566</span></td><td class="bar-cell"><span class="bar" style="width:45.7%"></span></td><td class="num">0.0043</td><td class="num">0.0086</td><td class="num">486.9 ha</td><td class="num">362.7 ha</td><td class="num">15.9 ha</td><td class="num">124.2 ha</td></tr><tr><th scope="row">rio</th><td class="num"><span class="tag meh">0.4383</span></td><td class="bar-cell"><span class="bar" style="width:43.8%"></span></td><td class="num">0.0205</td><td class="num">0.0402</td><td class="num">85.5 ha</td><td class="num">65.6 ha</td><td class="num">9.1 ha</td><td class="num">19.9 ha</td></tr><tr><th scope="row">milano</th><td class="num"><span class="tag meh">0.4107</span></td><td class="bar-cell"><span class="bar" style="width:41.1%"></span></td><td class="num">0.1310</td><td class="num">0.2316</td><td class="num">24.2 ha</td><td class="num">15.6 ha</td><td class="num">6.9 ha</td><td class="num">8.6 ha</td></tr><tr><th scope="row">brasilia</th><td class="num"><span class="tag meh">0.3372</span></td><td class="bar-cell"><span class="bar" style="width:33.7%"></span></td><td class="num">0.2986</td><td class="num">0.4598</td><td class="num">52.4 ha</td><td class="num">154.6 ha</td><td class="num">31.7 ha</td><td class="num">102.2 ha</td></tr><tr><th scope="row">norcia</th><td class="num"><span class="tag bad">0.1814</span></td><td class="bar-cell"><span class="bar" style="width:18.1%"></span></td><td class="num">0.0935</td><td class="num">0.1710</td><td class="num">12.3 ha</td><td class="num">23.9 ha</td><td class="num">2.1 ha</td><td class="num">11.6 ha</td></tr><tr><th scope="row">saclay_w</th><td class="num"><span class="tag bad">0.1605</span></td><td class="bar-cell"><span class="bar" style="width:16.1%"></span></td><td class="num">0.0206</td><td class="num">0.0403</td><td class="num">50.2 ha</td><td class="num">211.4 ha</td><td class="num">2.4 ha</td><td class="num">161.2 ha</td></tr><tr><th scope="row">valencia</th><td class="num"><span class="tag bad">0.0392</span></td><td class="bar-cell"><span class="bar" style="width:3.9%"></span></td><td class="num">0.0000</td><td class="num">0.0000</td><td class="num">9.7 ha</td><td class="num">114.2 ha</td><td class="num">0.0 ha</td><td class="num">104.5 ha</td></tr></tbody></table></section><section class="section" id="figures"><h2>Figures</h2><p class="prose">Rendered straight from the committed artefacts, so each map below is the prediction the metrics above were computed from, not a re-run.</p><section class="section" id="figures"><h2>Committed figures</h2><p class="prose">Generated by <code>python -m forest_change.figures</code> and committed to the repository, so they render on GitHub Pages with no build step and no network request. Maps are full-city inference, not tiles: every test scene is predicted as one image at 10 m resolution.</p><div class="figs"><figure class="fig"><img loading="lazy" src="figures/area_error.png" alt="Predicted versus true cleared area per test city, with the absolute error. The model is consistently high on bare-soil cities and low on the small, subtle ones."><figcaption>Predicted versus true cleared area per test city, with the absolute error. The model is consistently high on bare-soil cities and low on the small, subtle ones.</figcaption></figure><figure class="fig"><img loading="lazy" src="figures/baseline_threshold.png" alt="The NDVI forest threshold, tuned on the 14 labelled train cities only and frozen before the test evaluation. The chosen 0.1 sits at the top of that tuning curve."><figcaption>The NDVI forest threshold, tuned on the 14 labelled train cities only and frozen before the test evaluation. The chosen 0.1 sits at the top of that tuning curve.</figcaption></figure><figure class="fig"><img loading="lazy" src="figures/change_map_lasvegas.png" alt="Predicted change map for lasvegas. The city sits in bare desert, so almost every non-urban pixel looks like change to the model."><figcaption>Predicted change map for lasvegas. The city sits in bare desert, so almost every non-urban pixel looks like change to the model.</figcaption></figure><figure class="fig"><img loading="lazy" src="figures/change_map_montpellier.png" alt="Predicted change map for montpellier, full-city inference. Green is forest kept, cleared is the detected loss."><figcaption>Predicted change map for montpellier, full-city inference. Green is forest kept, cleared is the detected loss.</figcaption></figure><figure class="fig"><img loading="lazy" src="figures/change_map_valencia.png" alt="Predicted change map for valencia, the worst held-out city at 0.02 IoU. Compare the predicted extent to the small ground-truth patch."><figcaption>Predicted change map for valencia, the worst held-out city at 0.02 IoU. Compare the predicted extent to the small ground-truth patch.</figcaption></figure><figure class="fig"><img loading="lazy" src="figures/per_city_metrics.png" alt="IoU and F1 for the change class, city by city, for both models. Read it as a spread, not a mean: lasvegas and montpellier sit near 0.5 IoU while valencia sits at 0.02, and no single number describes that."><figcaption>IoU and F1 for the change class, city by city, for both models. Read it as a spread, not a mean: lasvegas and montpellier sit near 0.5 IoU while valencia sits at 0.02, and no single number describes that.</figcaption></figure><figure class="fig"><img loading="lazy" src="figures/qual_lasvegas.png" alt="lasvegas errors: the model drifts toward labelling all non-forest land as change, which is the precision failure at city scale."><figcaption>lasvegas errors: the model drifts toward labelling all non-forest land as change, which is the precision failure at city scale.</figcaption></figure><figure class="fig"><img loading="lazy" src="figures/qual_montpellier.png" alt="montpellier read as hit / false alarm / miss over the ground truth. The false alarms are the scattered desert-like pixels at the fringe."><figcaption>montpellier read as hit / false alarm / miss over the ground truth. The false alarms are the scattered desert-like pixels at the fringe.</figcaption></figure><figure class="fig"><img loading="lazy" src="figures/qual_valencia.png" alt="valencia errors: a flood of false positives over 104 ha of predicted loss against 9.7 ha of true loss."><figcaption>valencia errors: a flood of false positives over 104 ha of predicted loss against 9.7 ha of true loss.</figcaption></figure><figure class="fig"><img loading="lazy" src="figures/training_curves.png" alt="Validation curves over the 8 epochs. The change-class IoU peaks at epoch 05 (0.3187) and never recovers, which is why the reported model is that checkpoint and not the last epoch."><figcaption>Validation curves over the 8 epochs. The change-class IoU peaks at epoch 05 (0.3187) and never recovers, which is why the reported model is that checkpoint and not the last epoch.</figcaption></figure></div></section></section>
+<section class="section" id="honest">
+  <h2>What the numbers do not say</h2>
+  <div class="cols">
+    <div class="callout warn">
+      <h3>The class imbalance</h3>
+      <p>Changed pixels are 1&ndash;5% of a scene, so a model that labels every pixel <em>no-change</em> scores 0.4729 mean IoU here while finding exactly zero cleared forest (the no-change class alone is 94.58% of the pixels). Every honest
+      metric here is therefore reported for the <em>change class</em>, with the
+      no-change IoU shown only as context.</p>
+    </div>
+    <div class="callout warn">
+      <h3>The precision bias</h3>
+      <p>lasvegas and dubai sit in bare desert. Almost every non-urban pixel
+      there resembles cleared ground, so the model over-predicts area on them
+      and under-predicts on the small, subtle cities &mdash; see the area
+      accounting above, where the two failure directions are visible per city.</p>
+    </div>
+    <div class="callout bad">
+      <h3>The worst held-out city</h3>
+      <p>valencia reaches 0.0392 change-class F1
+      against 9.7 ha of true loss and
+      114.2 ha predicted. One city in ten is effectively
+      undetected, and the mean above hides it.</p>
+    </div>
+    <div class="callout ok">
+      <h3>The best held-out city</h3>
+      <p>montpellier reaches 0.6767 F1. The spread
+      between the best and worst held-out city is the real result, not the
+      average of the two.</p>
+    </div>
+  </div>
+  <p class="prose">Training ran 8 epochs on CPU on 856 tiles from 14 labelled
+  OSCD cities, with 4 further cities held out for early stopping. The test
+  cities were never used for training, validation or threshold tuning. Nothing
+  was ensembled, no pretrained change-detection weights were fine-tuned, and
+  the NDVI threshold was frozen before the test evaluation. The checkpoint
+  reported is the best-validation one, not the last epoch.</p>
+</section>
+<section class="section" id="artefacts"><details class="raw"><summary>Raw JSON artefacts (metrics.json + baseline_metrics.json)</summary><pre><code>{
+  &quot;baseline&quot;: {
+    &quot;forest_threshold&quot;: 0.1,
+    &quot;model&quot;: &quot;NDVI-loss baseline&quot;,
+    &quot;rule&quot;: &quot;cleared = NDVI(t1) &gt; 0.1 AND NDVI(t2) &lt;= 0.1, speckle filter &gt;= 50 px&quot;,
+    &quot;test&quot;: {
+      &quot;mean&quot;: {
+        &quot;f1_change&quot;: 0.1345,
+        &quot;iou_change&quot;: 0.0793
+      },
+      &quot;per_city&quot;: {
+        &quot;brasilia&quot;: {
+          &quot;abs_ha_error&quot;: 20.68,
+          &quot;city&quot;: &quot;brasilia&quot;,
+          &quot;f1_change&quot;: 0.4598,
+          &quot;iou_change&quot;: 0.2986,
+          &quot;iou_no_change&quot;: 0.9774,
+          &quot;mean_iou&quot;: 0.638,
+          &quot;precision_change&quot;: 0.6096,
+          &quot;pred_ha&quot;: 31.74,
+          &quot;recall_change&quot;: 0.3691,
+          &quot;tile_detect_f1&quot;: 0.7079,
+          &quot;tile_detect_precision&quot;: 0.84,
+          &quot;tile_detect_recall&quot;: 0.6117,
+          &quot;true_ha&quot;: 52.42
+        },
+        &quot;chongqing&quot;: {
+          &quot;abs_ha_error&quot;: 223.07,
+          &quot;city&quot;: &quot;chongqing&quot;,
+          &quot;f1_change&quot;: 0.2947,
+          &quot;iou_change&quot;: 0.1728,
+          &quot;iou_no_change&quot;: 0.9371,
+          &quot;mean_iou&quot;: 0.5549,
+          &quot;precision_change&quot;: 0.8139,
+          &quot;pred_ha&quot;: 63.3,
+          &quot;recall_change&quot;: 0.1799,
+          &quot;tile_detect_f1&quot;: 0.7118,
+          &quot;tile_detect_precision&quot;: 0.9576,
+          &quot;tile_detect_recall&quot;: 0.5664,
+          &quot;true_ha&quot;: 286.37
+        },
+        &quot;dubai&quot;: {
+          &quot;abs_ha_error&quot;: 470.95,
+          &quot;city&quot;: &quot;dubai&quot;,
+          &quot;f1_change&quot;: 0.0086,
+          &quot;iou_change&quot;: 0.0043,
+          &quot;iou_no_change&quot;: 0.8984,
+          &quot;mean_iou&quot;: 0.4514,
+          &quot;precision_change&quot;: 0.1361,
+          &quot;pred_ha&quot;: 15.94,
+          &quot;recall_change&quot;: 0.0045,
+          &quot;tile_detect_f1&quot;: 0.4364,
+          &quot;tile_detect_precision&quot;: 1.0,
+          &quot;tile_detect_recall&quot;: 0.2791,
+          &quot;true_ha&quot;: 486.89
+        },
+        &quot;lasvegas&quot;: {
+          &quot;abs_ha_error&quot;: 452.7,
+          &quot;city&quot;: &quot;lasvegas&quot;,
+          &quot;f1_change&quot;: 0.0,
+          &quot;iou_change&quot;: 0.0,
+          &quot;iou_no_change&quot;: 0.9233,
+          &quot;mean_iou&quot;: 0.4616,
+          &quot;precision_change&quot;: 0.0,
+          &quot;pred_ha&quot;: 0.0,
+          &quot;recall_change&quot;: 0.0,
+          &quot;tile_detect_f1&quot;: 0.0,
+          &quot;tile_detect_precision&quot;: 0.0,
+          &quot;tile_detect_recall&quot;: 0.0,
+          &quot;true_ha&quot;: 452.7
+        },
+        &quot;milano&quot;: {
+          &quot;abs_ha_error&quot;: 17.29,
+          &quot;city&quot;: &quot;milano&quot;,
+          &quot;f1_change&quot;: 0.2316,
+          &quot;iou_change&quot;: 0.131,
+          &quot;iou_no_change&quot;: 0.9921,
+          &quot;mean_iou&quot;: 0.5615,
+          &quot;precision_change&quot;: 0.5217,
+          &quot;pred_ha&quot;: 6.9,
+          &quot;recall_change&quot;: 0.1488,
+          &quot;tile_detect_f1&quot;: 0.4238,
+          &quot;tile_detect_precision&quot;: 0.8769,
+          &quot;tile_detect_recall&quot;: 0.2794,
+          &quot;true_ha&quot;: 24.19
+        },
+        &quot;montpellier&quot;: {
+          &quot;abs_ha_error&quot;: 116.89,
+          &quot;city&quot;: &quot;montpellier&quot;,
+          &quot;f1_change&quot;: 0.0986,
+          &quot;iou_change&quot;: 0.0519,
+          &quot;iou_no_change&quot;: 0.9321,
+          &quot;mean_iou&quot;: 0.492,
+          &quot;precision_change&quot;: 0.5209,
+          &quot;pred_ha&quot;: 13.65,
+          &quot;recall_change&quot;: 0.0545,
+          &quot;tile_detect_f1&quot;: 0.4439,
+          &quot;tile_detect_precision&quot;: 0.8532,
+          &quot;tile_detect_recall&quot;: 0.3,
+          &quot;true_ha&quot;: 130.54
+        },
+        &quot;norcia&quot;: {
+          &quot;abs_ha_error&quot;: 10.15,
+          &quot;city&quot;: &quot;norcia&quot;,
+          &quot;f1_change&quot;: 0.171,
+          &quot;iou_change&quot;: 0.0935,
+          &quot;iou_no_change&quot;: 0.9871,
+          &quot;mean_iou&quot;: 0.5403,
+          &quot;precision_change&quot;: 0.5802,
+          &quot;pred_ha&quot;: 2.12,
+          &quot;recall_change&quot;: 0.1002,
+          &quot;tile_detect_f1&quot;: 0.3059,
+          &quot;tile_detect_precision&quot;: 0.8125,
+          &quot;tile_detect_recall&quot;: 0.1884,
+          &quot;true_ha&quot;: 12.27
+        },
+        &quot;rio&quot;: {
+          &quot;abs_ha_error&quot;: 76.47,
+          &quot;city&quot;: &quot;rio&quot;,
+          &quot;f1_change&quot;: 0.0402,
+          &quot;iou_change&quot;: 0.0205,
+          &quot;iou_no_change&quot;: 0.9396,
+          &quot;mean_iou&quot;: 0.48,
+          &quot;precision_change&quot;: 0.2099,
+          &quot;pred_ha&quot;: 9.05,
+          &quot;recall_change&quot;: 0.0222,
+          &quot;tile_detect_f1&quot;: 0.4764,
+          &quot;tile_detect_precision&quot;: 0.9712,
+          &quot;tile_detect_recall&quot;: 0.3156,
+          &quot;true_ha&quot;: 85.52
+        },
+        &quot;saclay_w&quot;: {
+          &quot;abs_ha_error&quot;: 47.74,
+          &quot;city&quot;: &quot;saclay_w&quot;,
+          &quot;f1_change&quot;: 0.0403,
+          &quot;iou_change&quot;: 0.0206,
+          &quot;iou_no_change&quot;: 0.9885,
+          &quot;mean_iou&quot;: 0.5045,
+          &quot;precision_change&quot;: 0.4344,
+          &quot;pred_ha&quot;: 2.44,
+          &quot;recall_change&quot;: 0.0211,
+          &quot;tile_detect_f1&quot;: 0.0922,
+          &quot;tile_detect_precision&quot;: 0.3571,
+          &quot;tile_detect_recall&quot;: 0.0529,
+          &quot;true_ha&quot;: 50.18
+        },
+        &quot;valencia&quot;: {
+          &quot;abs_ha_error&quot;: 9.69,
+          &quot;city&quot;: &quot;valencia&quot;,
+          &quot;f1_change&quot;: 0.0,
+          &quot;iou_change&quot;: 0.0,
+          &quot;iou_no_change&quot;: 0.9956,
+          &quot;mean_iou&quot;: 0.4978,
+          &quot;precision_change&quot;: 0.0,
+          &quot;pred_ha&quot;: 0.0,
+          &quot;recall_change&quot;: 0.0,
+          &quot;tile_detect_f1&quot;: 0.0,
+          &quot;tile_detect_precision&quot;: 0.0,
+          &quot;tile_detect_recall&quot;: 0.0,
+          &quot;true_ha&quot;: 9.69
+        }
+      }
+    },
+    &quot;test_cities&quot;: [
+      &quot;brasilia&quot;,
+      &quot;montpellier&quot;,
+      &quot;norcia&quot;,
+      &quot;rio&quot;,
+      &quot;saclay_w&quot;,
+      &quot;valencia&quot;,
+      &quot;dubai&quot;,
+      &quot;lasvegas&quot;,
+      &quot;milano&quot;,
+      &quot;chongqing&quot;
+    ],
+    &quot;threshold_grid&quot;: [
+      0.05,
+      0.1,
+      0.15,
+      0.2,
+      0.3,
+      0.35,
+      0.4,
+      0.45,
+      0.5,
+      0.55,
+      0.6,
+      0.7
+    ],
+    &quot;train_cities&quot;: [
+      &quot;aguasclaras&quot;,
+      &quot;bercy&quot;,
+      &quot;bordeaux&quot;,
+      &quot;nantes&quot;,
+      &quot;paris&quot;,
+      &quot;rennes&quot;,
+      &quot;saclay_e&quot;,
+      &quot;abudhabi&quot;,
+      &quot;cupertino&quot;,
+      &quot;pisa&quot;,
+      &quot;beihai&quot;,
+      &quot;hongkong&quot;,
+      &quot;beirut&quot;,
+      &quot;mumbai&quot;
+    ],
+    &quot;tuning&quot;: [
+      {
+        &quot;f1_change&quot;: 0.0676,
+        &quot;iou_change&quot;: 0.036,
+        &quot;threshold&quot;: 0.05
+      },
+      {
+        &quot;f1_change&quot;: 0.1086,
+        &quot;iou_change&quot;: 0.0607,
+        &quot;threshold&quot;: 0.1
+      },
+      {
+        &quot;f1_change&quot;: 0.1036,
+        &quot;iou_change&quot;: 0.0573,
+        &quot;threshold&quot;: 0.15
+      },
+      {
+        &quot;f1_change&quot;: 0.0961,
+        &quot;iou_change&quot;: 0.0538,
+        &quot;threshold&quot;: 0.2
+      },
+      {
+        &quot;f1_change&quot;: 0.0762,
+        &quot;iou_change&quot;: 0.0426,
+        &quot;threshold&quot;: 0.3
+      },
+      {
+        &quot;f1_change&quot;: 0.0629,
+        &quot;iou_change&quot;: 0.0347,
+        &quot;threshold&quot;: 0.35
+      },
+      {
+        &quot;f1_change&quot;: 0.0477,
+        &quot;iou_change&quot;: 0.0255,
+        &quot;threshold&quot;: 0.4
+      },
+      {
+        &quot;f1_change&quot;: 0.0377,
+        &quot;iou_change&quot;: 0.0199,
+        &quot;threshold&quot;: 0.45
+      },
+      {
+        &quot;f1_change&quot;: 0.0194,
+        &quot;iou_change&quot;: 0.01,
+        &quot;threshold&quot;: 0.5
+      },
+      {
+        &quot;f1_change&quot;: 0.0122,
+        &quot;iou_change&quot;: 0.0062,
+        &quot;threshold&quot;: 0.55
+      },
+      {
+        &quot;f1_change&quot;: 0.0059,
+        &quot;iou_change&quot;: 0.003,
+        &quot;threshold&quot;: 0.6
+      },
+      {
+        &quot;f1_change&quot;: 0.0015,
+        &quot;iou_change&quot;: 0.0008,
+        &quot;threshold&quot;: 0.7
+      }
+    ]
+  },
+  &quot;unet&quot;: {
+    &quot;minutes&quot;: 108.5,
+    &quot;run&quot;: {
+      &quot;best_val_iou_change&quot;: 0.3187,
+      &quot;device&quot;: &quot;cpu&quot;,
+      &quot;epochs&quot;: 8,
+      &quot;history&quot;: [
+        {
+          &quot;epoch&quot;: 1,
+          &quot;f1_change&quot;: 0.0,
+          &quot;iou_change&quot;: 0.0,
+          &quot;iou_no_change&quot;: 0.9769,
+          &quot;loss&quot;: 0.5798,
+          &quot;mean_iou&quot;: 0.4885,
+          &quot;precision_change&quot;: 0.0,
+          &quot;recall_change&quot;: 0.0
+        },
+        {
+          &quot;epoch&quot;: 2,
+          &quot;f1_change&quot;: 0.2077,
+          &quot;iou_change&quot;: 0.1159,
+          &quot;iou_no_change&quot;: 0.8652,
+          &quot;loss&quot;: 0.512,
+          &quot;mean_iou&quot;: 0.4906,
+          &quot;precision_change&quot;: 0.1205,
+          &quot;recall_change&quot;: 0.7522
+        },
+        {
+          &quot;epoch&quot;: 3,
+          &quot;f1_change&quot;: 0.3684,
+          &quot;iou_change&quot;: 0.2258,
+          &quot;iou_no_change&quot;: 0.9741,
+          &quot;loss&quot;: 0.4531,
+          &quot;mean_iou&quot;: 0.5999,
+          &quot;precision_change&quot;: 0.4247,
+          &quot;recall_change&quot;: 0.3252
+        },
+        {
+          &quot;epoch&quot;: 4,
+          &quot;f1_change&quot;: 0.4339,
+          &quot;iou_change&quot;: 0.2771,
+          &quot;iou_no_change&quot;: 0.9749,
+          &quot;loss&quot;: 0.4324,
+          &quot;mean_iou&quot;: 0.626,
+          &quot;precision_change&quot;: 0.4565,
+          &quot;recall_change&quot;: 0.4134
+        },
+        {
+          &quot;epoch&quot;: 5,
+          &quot;f1_change&quot;: 0.4834,
+          &quot;iou_change&quot;: 0.3187,
+          &quot;iou_no_change&quot;: 0.9705,
+          &quot;loss&quot;: 0.4289,
+          &quot;mean_iou&quot;: 0.6446,
+          &quot;precision_change&quot;: 0.4095,
+          &quot;recall_change&quot;: 0.5898
+        },
+        {
+          &quot;epoch&quot;: 6,
+          &quot;f1_change&quot;: 0.4408,
+          &quot;iou_change&quot;: 0.2827,
+          &quot;iou_no_change&quot;: 0.9694,
+          &quot;loss&quot;: 0.4197,
+          &quot;mean_iou&quot;: 0.626,
+          &quot;precision_change&quot;: 0.3842,
+          &quot;recall_change&quot;: 0.5169
+        },
+        {
+          &quot;epoch&quot;: 7,
+          &quot;f1_change&quot;: 0.2907,
+          &quot;iou_change&quot;: 0.1701,
+          &quot;iou_no_change&quot;: 0.9738,
+          &quot;loss&quot;: 0.4118,
+          &quot;mean_iou&quot;: 0.5719,
+          &quot;precision_change&quot;: 0.3898,
+          &quot;recall_change&quot;: 0.2318
+        },
+        {
+          &quot;epoch&quot;: 8,
+          &quot;f1_change&quot;: 0.4445,
+          &quot;iou_change&quot;: 0.2857,
+          &quot;iou_no_change&quot;: 0.9689,
+          &quot;loss&quot;: 0.4081,
+          &quot;mean_iou&quot;: 0.6273,
+          &quot;precision_change&quot;: 0.3813,
+          &quot;recall_change&quot;: 0.5327
+        }
+      ],
+      &quot;n_train_tiles&quot;: 856,
+      &quot;n_val_tiles&quot;: 359,
+      &quot;test_cities&quot;: [
+        &quot;brasilia&quot;,
+        &quot;montpellier&quot;,
+        &quot;norcia&quot;,
+        &quot;rio&quot;,
+        &quot;saclay_w&quot;,
+        &quot;valencia&quot;,
+        &quot;dubai&quot;,
+        &quot;lasvegas&quot;,
+        &quot;milano&quot;,
+        &quot;chongqing&quot;
+      ],
+      &quot;train_cities&quot;: [
+        &quot;aguasclaras&quot;,
+        &quot;bercy&quot;,
+        &quot;bordeaux&quot;,
+        &quot;nantes&quot;,
+        &quot;paris&quot;,
+        &quot;rennes&quot;,
+        &quot;saclay_e&quot;,
+        &quot;abudhabi&quot;,
+        &quot;cupertino&quot;,
+        &quot;pisa&quot;,
+        &quot;beihai&quot;,
+        &quot;hongkong&quot;,
+        &quot;beirut&quot;,
+        &quot;mumbai&quot;
+      ],
+      &quot;val_cities&quot;: [
+        &quot;bercy&quot;,
+        &quot;nantes&quot;,
+        &quot;rennes&quot;,
+        &quot;beirut&quot;
+      ]
+    },
+    &quot;test&quot;: {
+      &quot;per_city&quot;: {
+        &quot;brasilia&quot;: {
+          &quot;abs_ha_error&quot;: 102.18,
+          &quot;f1_change&quot;: 0.3372,
+          &quot;iou_change&quot;: 0.2028,
+          &quot;iou_no_change&quot;: 0.9312,
+          &quot;mean_iou&quot;: 0.567,
+          &quot;precision_change&quot;: 0.2257,
+          &quot;pred_ha&quot;: 154.6,
+          &quot;recall_change&quot;: 0.6658,
+          &quot;true_ha&quot;: 52.42
+        },
+        &quot;chongqing&quot;: {
+          &quot;abs_ha_error&quot;: 123.16,
+          &quot;f1_change&quot;: 0.4895,
+          &quot;iou_change&quot;: 0.324,
+          &quot;iou_no_change&quot;: 0.9406,
+          &quot;mean_iou&quot;: 0.6323,
+          &quot;precision_change&quot;: 0.6742,
+          &quot;pred_ha&quot;: 163.21,
+          &quot;recall_change&quot;: 0.3842,
+          &quot;true_ha&quot;: 286.37
+        },
+        &quot;dubai&quot;: {
+          &quot;abs_ha_error&quot;: 124.2,
+          &quot;f1_change&quot;: 0.4566,
+          &quot;iou_change&quot;: 0.2959,
+          &quot;iou_no_change&quot;: 0.9021,
+          &quot;mean_iou&quot;: 0.599,
+          &quot;precision_change&quot;: 0.5348,
+          &quot;pred_ha&quot;: 362.69,
+          &quot;recall_change&quot;: 0.3984,
+          &quot;true_ha&quot;: 486.89
+        },
+        &quot;lasvegas&quot;: {
+          &quot;abs_ha_error&quot;: 167.99,
+          &quot;f1_change&quot;: 0.6717,
+          &quot;iou_change&quot;: 0.5057,
+          &quot;iou_no_change&quot;: 0.9364,
+          &quot;mean_iou&quot;: 0.7211,
+          &quot;precision_change&quot;: 0.5808,
+          &quot;pred_ha&quot;: 620.69,
+          &quot;recall_change&quot;: 0.7964,
+          &quot;true_ha&quot;: 452.7
+        },
+        &quot;milano&quot;: {
+          &quot;abs_ha_error&quot;: 8.55,
+          &quot;f1_change&quot;: 0.4107,
+          &quot;iou_change&quot;: 0.2585,
+          &quot;iou_no_change&quot;: 0.9923,
+          &quot;mean_iou&quot;: 0.6254,
+          &quot;precision_change&quot;: 0.523,
+          &quot;pred_ha&quot;: 15.64,
+          &quot;recall_change&quot;: 0.3382,
+          &quot;true_ha&quot;: 24.19
+        },
+        &quot;montpellier&quot;: {
+          &quot;abs_ha_error&quot;: 22.63,
+          &quot;f1_change&quot;: 0.6767,
+          &quot;iou_change&quot;: 0.5114,
+          &quot;iou_no_change&quot;: 0.9498,
+          &quot;mean_iou&quot;: 0.7306,
+          &quot;precision_change&quot;: 0.6268,
+          &quot;pred_ha&quot;: 153.17,
+          &quot;recall_change&quot;: 0.7354,
+          &quot;true_ha&quot;: 130.54
+        },
+        &quot;norcia&quot;: {
+          &quot;abs_ha_error&quot;: 11.62,
+          &quot;f1_change&quot;: 0.1814,
+          &quot;iou_change&quot;: 0.0998,
+          &quot;iou_no_change&quot;: 0.968,
+          &quot;mean_iou&quot;: 0.5339,
+          &quot;precision_change&quot;: 0.1373,
+          &quot;pred_ha&quot;: 23.89,
+          &quot;recall_change&quot;: 0.2673,
+          &quot;true_ha&quot;: 12.27
+        },
+        &quot;rio&quot;: {
+          &quot;abs_ha_error&quot;: 19.95,
+          &quot;f1_change&quot;: 0.4383,
+          &quot;iou_change&quot;: 0.2806,
+          &quot;iou_no_change&quot;: 0.9423,
+          &quot;mean_iou&quot;: 0.6115,
+          &quot;precision_change&quot;: 0.505,
+          &quot;pred_ha&quot;: 65.57,
+          &quot;recall_change&quot;: 0.3872,
+          &quot;true_ha&quot;: 85.52
+        },
+        &quot;saclay_w&quot;: {
+          &quot;abs_ha_error&quot;: 161.18,
+          &quot;f1_change&quot;: 0.1605,
+          &quot;iou_change&quot;: 0.0873,
+          &quot;iou_no_change&quot;: 0.9498,
+          &quot;mean_iou&quot;: 0.5185,
+          &quot;precision_change&quot;: 0.0993,
+          &quot;pred_ha&quot;: 211.36,
+          &quot;recall_change&quot;: 0.4183,
+          &quot;true_ha&quot;: 50.18
+        },
+        &quot;valencia&quot;: {
+          &quot;abs_ha_error&quot;: 104.5,
+          &quot;f1_change&quot;: 0.0392,
+          &quot;iou_change&quot;: 0.02,
+          &quot;iou_no_change&quot;: 0.9453,
+          &quot;mean_iou&quot;: 0.4827,
+          &quot;precision_change&quot;: 0.0213,
+          &quot;pred_ha&quot;: 114.19,
+          &quot;recall_change&quot;: 0.2508,
+          &quot;true_ha&quot;: 9.69
+        }
+      }
+    }
+  }
+}</code></pre></details></section>
+<footer>
+  <p>Generated from the committed JSON artefacts by
+     <code>python -m forest_change.dashboard</code>.</p>
+  <p><a href="https://github.com/Bakkarranna/deforestation-detection">Source on GitHub</a></p>
+</footer>
+</div>
+</body>
+</html>

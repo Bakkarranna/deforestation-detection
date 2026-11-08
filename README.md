@@ -12,6 +12,9 @@ hectare-scale area accounting.
 
 ## About
 
+**Live results console (GitHub Pages):** <https://bakkarranna.github.io/deforestation-detection/> — the same
+numbers as below, in a browser, with nothing installed.
+
 **The problem.** Forest loss is reported as annual national totals, but the
 decisions that cause and prevent it happen at the scale of individual patches:
 a clearing, a licensed plantation, a fire scar. Reading that from satellite

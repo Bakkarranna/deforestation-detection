@@ -154,7 +154,7 @@ Two decisions drive the result:
 
 ```
 src/forest_change/   pipeline source and the console renderer
-tests/               pure numpy/scipy unit tests (no torch, no data needed)
+tests/               unit tests, numpy/scipy plus rasterio (no torch, no data needed)
 docs/                the static results console published to GitHub Pages
 results/             metrics, tables, logs and the figures above
 data/                dataset, downloaded on demand (git-ignored)
@@ -223,7 +223,7 @@ the prediction the metrics were computed from.
 ## Tests
 
 ```bash
-pytest                # 21 unit tests, pure numpy/scipy
+pytest                # 21 unit tests, numpy/scipy plus rasterio
 ruff check src tests
 ```
 
